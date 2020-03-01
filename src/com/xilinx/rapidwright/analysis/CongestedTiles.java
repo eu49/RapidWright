@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.ArrayList;
 
 import com.xilinx.rapidwright.design.Design;
+import com.xilinx.rapidwright.device.Device;
 import com.xilinx.rapidwright.design.Net;
 import com.xilinx.rapidwright.device.Tile;
 import com.xilinx.rapidwright.device.TileTypeEnum;
@@ -30,6 +31,10 @@ public class CongestedTiles {
 
     // Open checkpoint
     Design design = Design.readCheckpoint(args[0]);
+    Device device = design.getDevice();
+    int numRows = device.getRows();
+    int numCols = device.getColumns();
+
     // Get all used PIPs
     Collection<Net> allNets = design.getNets();
     Set<PIP> usedPIPs = new HashSet<PIP>();
@@ -37,22 +42,24 @@ public class CongestedTiles {
       List<PIP> netPIPs = net.getPIPs();
       usedPIPs.addAll(netPIPs);
     }
+
+    // Get PIP usage of tiles 
+    int[][] data = new int[numRows][numCols];
+    for (PIP pip : usedPIPs) {
+      Tile pipTile = pip.getTile();
+      data[pipTile.getRow()][pipTile.getColumn()]++;
+    }
+
     // Get tiles
     Collection<Tile> allTiles = design.getDevice().getAllTiles();
 
     // Create a map from INT tiles to their congestion
     HashMap<String, Integer> congestion = new HashMap<String, Integer>();
     ArrayList<Integer> values = new ArrayList<Integer>();
-
     for (Tile tile : allTiles) {
       if (tile.getTileTypeEnum().equals(TileTypeEnum.INT)) {
-        String tileName = tile.getName();
-        Integer tileCongestion = 0;
-        for (PIP pip : usedPIPs) {
-          if (pip.getTile().equals(tile)) {tileCongestion++;}
-        }
-        congestion.put(tileName, tileCongestion);
-        values.add(tileCongestion);
+        congestion.put(tile.getName(), data[tile.getRow()][tile.getColumn()]);
+        values.add(data[tile.getRow()][tile.getColumn()]);
       }
     }
 

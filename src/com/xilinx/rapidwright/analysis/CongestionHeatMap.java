@@ -28,7 +28,7 @@ class CongestionHeatMap extends JFrame {
       System.out.println("USAGE: java com.xilinx.rapidwright.analysis.CongestionHeatMap <input DCP>");
       System.exit(0);
     }
-    
+
     Design design = Design.readCheckpoint(args[0]);
     Device device = design.getDevice();
     int numRows = device.getRows();
@@ -42,21 +42,12 @@ class CongestionHeatMap extends JFrame {
       usedPIPs.addAll(netPIPs);
     }
 
+    // Get PIP usage of tiles
     double[][] data = new double[numCols][numRows];
-    for (int i = 0; i < numRows; i++) {
-      for (int j = 0; j < numCols; j++) {
-        Tile tile = device.getTile(i, j);
-        if (tile.getTileTypeEnum().equals(TileTypeEnum.INT)) {
-          Integer tileCongestion = 0;
-          for (PIP pip : usedPIPs) {
-            if (pip.getTile().equals(tile)) {tileCongestion++;}
-          }
-          data[j][i] = tileCongestion;
-        }
-      }
+    for (PIP pip : usedPIPs) {
+      Tile pipTile = pip.getTile();
+      data[pipTile.getColumn()][pipTile.getRow()]++;
     }
-
-    //data = HeatMap.generateSinCosData(100);
 
     boolean useGraphicsYAxis = true;
 
